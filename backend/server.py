@@ -244,6 +244,210 @@ async def create_siswa(siswa: Siswa, current_user: User = Depends(require_role([
     await db.siswa.insert_one(siswa.dict())
     return siswa
 
+# CRUD Operations for Siswa (Admin only)
+@api_router.get("/siswa/{siswa_id}", response_model=Siswa)
+async def get_siswa_by_id(siswa_id: str, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WALI_KELAS]))):
+    siswa = await db.siswa.find_one({"id": siswa_id, "is_active": True})
+    if not siswa:
+        raise HTTPException(status_code=404, detail="Siswa not found")
+    return Siswa(**siswa)
+
+@api_router.put("/siswa/{siswa_id}", response_model=Siswa)
+async def update_siswa(siswa_id: str, siswa_data: Siswa, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    existing_siswa = await db.siswa.find_one({"id": siswa_id})
+    if not existing_siswa:
+        raise HTTPException(status_code=404, detail="Siswa not found")
+    
+    await db.siswa.update_one({"id": siswa_id}, {"$set": siswa_data.dict()})
+    updated_siswa = await db.siswa.find_one({"id": siswa_id})
+    return Siswa(**updated_siswa)
+
+@api_router.delete("/siswa/{siswa_id}")
+async def delete_siswa(siswa_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    result = await db.siswa.update_one({"id": siswa_id}, {"$set": {"is_active": False}})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Siswa not found")
+    return {"message": "Siswa deleted successfully"}
+
+# CRUD Operations for Guru (Admin only)
+@api_router.get("/guru", response_model=List[Guru])
+async def get_guru_list(current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    guru_list = await db.guru.find().to_list(1000)
+    return [Guru(**g) for g in guru_list]
+
+@api_router.get("/guru/{guru_id}", response_model=Guru)
+async def get_guru_by_id(guru_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    guru = await db.guru.find_one({"id": guru_id})
+    if not guru:
+        raise HTTPException(status_code=404, detail="Guru not found")
+    return Guru(**guru)
+
+@api_router.post("/guru", response_model=Guru)
+async def create_guru(guru: Guru, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    await db.guru.insert_one(guru.dict())
+    return guru
+
+@api_router.put("/guru/{guru_id}", response_model=Guru)
+async def update_guru(guru_id: str, guru_data: Guru, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    existing_guru = await db.guru.find_one({"id": guru_id})
+    if not existing_guru:
+        raise HTTPException(status_code=404, detail="Guru not found")
+    
+    await db.guru.update_one({"id": guru_id}, {"$set": guru_data.dict()})
+    updated_guru = await db.guru.find_one({"id": guru_id})
+    return Guru(**updated_guru)
+
+@api_router.delete("/guru/{guru_id}")
+async def delete_guru(guru_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    result = await db.guru.delete_one({"id": guru_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Guru not found")
+    return {"message": "Guru deleted successfully"}
+
+# CRUD Operations for Kelas (Admin only)
+@api_router.put("/kelas/{kelas_id}", response_model=Kelas)
+async def update_kelas(kelas_id: str, kelas_data: Kelas, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    existing_kelas = await db.kelas.find_one({"id": kelas_id})
+    if not existing_kelas:
+        raise HTTPException(status_code=404, detail="Kelas not found")
+    
+    await db.kelas.update_one({"id": kelas_id}, {"$set": kelas_data.dict()})
+    updated_kelas = await db.kelas.find_one({"id": kelas_id})
+    return Kelas(**updated_kelas)
+
+@api_router.delete("/kelas/{kelas_id}")
+async def delete_kelas(kelas_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    result = await db.kelas.delete_one({"id": kelas_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Kelas not found")
+    return {"message": "Kelas deleted successfully"}
+
+# CRUD Operations for Mapel (Admin only)
+@api_router.get("/mapel", response_model=List[Mapel])
+async def get_mapel_list(jenis: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    query = {}
+    if jenis:
+        query["jenis"] = jenis
+    
+    mapel_list = await db.mapel.find(query).to_list(1000)
+    return [Mapel(**m) for m in mapel_list]
+
+@api_router.post("/mapel", response_model=Mapel)
+async def create_mapel(mapel: Mapel, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    await db.mapel.insert_one(mapel.dict())
+    return mapel
+
+@api_router.put("/mapel/{mapel_id}", response_model=Mapel)
+async def update_mapel(mapel_id: str, mapel_data: Mapel, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    existing_mapel = await db.mapel.find_one({"id": mapel_id})
+    if not existing_mapel:
+        raise HTTPException(status_code=404, detail="Mapel not found")
+    
+    await db.mapel.update_one({"id": mapel_id}, {"$set": mapel_data.dict()})
+    updated_mapel = await db.mapel.find_one({"id": mapel_id})
+    return Mapel(**updated_mapel)
+
+@api_router.delete("/mapel/{mapel_id}")
+async def delete_mapel(mapel_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    result = await db.mapel.delete_one({"id": mapel_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Mapel not found")
+    return {"message": "Mapel deleted successfully"}
+
+# CRUD Operations for Tahun Ajaran (Admin only)
+@api_router.get("/tahun-ajaran", response_model=List[TahunAjaran])
+async def get_tahun_ajaran_list(current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    tahun_ajaran_list = await db.tahun_ajaran.find().to_list(1000)
+    return [TahunAjaran(**ta) for ta in tahun_ajaran_list]
+
+@api_router.post("/tahun-ajaran", response_model=TahunAjaran)
+async def create_tahun_ajaran(tahun_ajaran: TahunAjaran, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    # If this is set as active, deactivate others
+    if tahun_ajaran.is_active:
+        await db.tahun_ajaran.update_many({}, {"$set": {"is_active": False}})
+    
+    await db.tahun_ajaran.insert_one(tahun_ajaran.dict())
+    return tahun_ajaran
+
+@api_router.put("/tahun-ajaran/{ta_id}", response_model=TahunAjaran)
+async def update_tahun_ajaran(ta_id: str, ta_data: TahunAjaran, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    existing_ta = await db.tahun_ajaran.find_one({"id": ta_id})
+    if not existing_ta:
+        raise HTTPException(status_code=404, detail="Tahun Ajaran not found")
+    
+    # If this is set as active, deactivate others
+    if ta_data.is_active:
+        await db.tahun_ajaran.update_many({}, {"$set": {"is_active": False}})
+    
+    await db.tahun_ajaran.update_one({"id": ta_id}, {"$set": ta_data.dict()})
+    updated_ta = await db.tahun_ajaran.find_one({"id": ta_id})
+    return TahunAjaran(**updated_ta)
+
+@api_router.delete("/tahun-ajaran/{ta_id}")
+async def delete_tahun_ajaran(ta_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    result = await db.tahun_ajaran.delete_one({"id": ta_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Tahun Ajaran not found")
+    return {"message": "Tahun Ajaran deleted successfully"}
+
+# Search and Filter endpoints
+@api_router.get("/siswa/search")
+async def search_siswa(
+    q: Optional[str] = None,
+    kelas_id: Optional[str] = None, 
+    jurusan_id: Optional[str] = None,
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.WALI_KELAS]))
+):
+    query = {"is_active": True}
+    
+    if q:
+        query["$or"] = [
+            {"nama_lengkap": {"$regex": q, "$options": "i"}},
+            {"nis": {"$regex": q, "$options": "i"}},
+            {"nisn": {"$regex": q, "$options": "i"}}
+        ]
+    
+    if kelas_id:
+        query["kelas_id"] = kelas_id
+        
+    # If wali kelas, only show their students
+    if current_user.role == UserRole.WALI_KELAS:
+        wali_kelas = await db.kelas.find_one({"wali_kelas_id": current_user.id})
+        if wali_kelas:
+            query["kelas_id"] = wali_kelas["id"]
+        else:
+            return []
+    
+    siswa_list = await db.siswa.find(query).limit(100).to_list(100)
+    return [Siswa(**s) for s in siswa_list]
+
+# Get detailed kelas with jurusan info
+@api_router.get("/kelas/detailed")
+async def get_kelas_detailed(current_user: User = Depends(get_current_user)):
+    kelas_list = await db.kelas.find().to_list(1000)
+    detailed_kelas = []
+    
+    for kelas in kelas_list:
+        # Get jurusan info
+        jurusan = await db.jurusan.find_one({"id": kelas["jurusan_id"]})
+        
+        # Get wali kelas info if assigned
+        wali_kelas = None
+        if kelas.get("wali_kelas_id"):
+            wali_kelas = await db.users.find_one({"id": kelas["wali_kelas_id"]})
+        
+        # Count siswa in this kelas
+        siswa_count = await db.siswa.count_documents({"kelas_id": kelas["id"], "is_active": True})
+        
+        detailed_kelas.append({
+            **kelas,
+            "jurusan": jurusan,
+            "wali_kelas": wali_kelas,
+            "siswa_count": siswa_count
+        })
+    
+    return detailed_kelas
+
 # Initialize default data
 @api_router.post("/init/default-data")
 async def init_default_data(current_user: User = Depends(require_role([UserRole.ADMIN]))):
@@ -262,6 +466,22 @@ async def init_default_data(current_user: User = Depends(require_role([UserRole.
         if not existing:
             j_obj = Jurusan(**j_data)
             await db.jurusan.insert_one(j_obj.dict())
+    
+    # Create default kelas for each jurusan
+    jurusan_list = await db.jurusan.find().to_list(1000)
+    tingkatan = ["X", "XI", "XII"]
+    
+    for tingkat in tingkatan:
+        for jurusan in jurusan_list:
+            kelas_name = f"{tingkat} {jurusan['kode_jurusan']} 1"
+            existing = await db.kelas.find_one({"nama_kelas": kelas_name})
+            if not existing:
+                kelas_obj = Kelas(
+                    tingkatan=tingkat,
+                    jurusan_id=jurusan["id"],
+                    nama_kelas=kelas_name
+                )
+                await db.kelas.insert_one(kelas_obj.dict())
     
     # Default mapel
     default_mapel = [
@@ -286,6 +506,14 @@ async def init_default_data(current_user: User = Depends(require_role([UserRole.
         if not existing:
             m_obj = Mapel(**m_data)
             await db.mapel.insert_one(m_obj.dict())
+    
+    # Create default tahun ajaran
+    current_year = 2024
+    default_ta = f"{current_year}/{current_year + 1}"
+    existing_ta = await db.tahun_ajaran.find_one({"tahun": default_ta})
+    if not existing_ta:
+        ta_ganjil = TahunAjaran(tahun=default_ta, semester="ganjil", is_active=True)
+        await db.tahun_ajaran.insert_one(ta_ganjil.dict())
     
     return {"message": "Default data initialized successfully"}
 
